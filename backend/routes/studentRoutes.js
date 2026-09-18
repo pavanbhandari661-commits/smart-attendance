@@ -9,22 +9,51 @@ const {
 } = require("../controllers/studentController");
 
 const validateStudent = require("../middleware/studentValidation");
+const protect = require("../middleware/authMiddleware");
+const authorize = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
-// GET all students
-router.get("/", getStudents);
+// View all students
+router.get(
+    "/",
+    protect,
+    authorize("admin", "teacher"),
+    getStudents
+);
 
-// POST create a student
-router.post("/", validateStudent, createStudent);
+// Create student
+router.post(
+    "/",
+    protect,
+    authorize("admin", "teacher"),
+    validateStudent,
+    createStudent
+);
 
-// GET one student
-router.get("/:id", getStudentById);
+// View one student
+router.get(
+    "/:id",
+    protect,
+    authorize("admin", "teacher"),
+    getStudentById
+);
 
-// PUT update a student
-router.put("/:id", validateStudent, updateStudent);
+// Update student
+router.put(
+    "/:id",
+    protect,
+    authorize("admin", "teacher"),
+    validateStudent,
+    updateStudent
+);
 
-// DELETE a student
-router.delete("/:id", deleteStudent);
+// Delete student - admin only
+router.delete(
+    "/:id",
+    protect,
+    authorize("admin"),
+    deleteStudent
+);
 
 module.exports = router;

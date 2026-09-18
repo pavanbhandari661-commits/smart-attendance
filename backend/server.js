@@ -4,6 +4,7 @@ const express = require("express");
 const connectDB = require("./config/db");
 
 const studentRoutes = require("./routes/studentRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
@@ -17,6 +18,9 @@ app.use(express.json());
 
 // Student routes
 app.use("/api/students", studentRoutes);
+
+// Authentication routes
+app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
     res.send("SmartAttend AI Backend is running!");
