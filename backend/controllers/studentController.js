@@ -1,13 +1,93 @@
 const Student = require("../models/Student");
 
 // Get all students
+// Get students with search, filters and pagination
 const getStudents = async (req, res) => {
     try {
-        const students = await Student.find();
+        const {
+            search,
+            department,
+            year,
+            division,
+            page = 1,
+            limit = 10
+        } = req.query;
+
+        let filter = {};
+
+        // Search by name, student ID, roll number or email
+        if (search) {
+            filter.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { studentId: { $regex: search, $options: "i" } },
+                { rollNumber: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } }
+            ];
+        }
+
+        // Filter by department
+        if (department) {
+            filter.department = department;
+        }
+
+        // Filter by year
+        if (year) {
+            filter.year = Number(year);
+        }
+
+        // Filter by division
+        if (division) {
+            filter.division = division;
+        }
+
+        // Convert pagination values to numbers
+        const currentPage = Number(page);
+const itemsPerPage = Number(limit);
+
+if (
+    !Number.isInteger(currentPage) ||
+    currentPage < 1
+) {
+    return res.status(400).json({
+        success: false,
+        message: "Page must be a positive integer"
+    });
+}
+
+if (
+    !Number.isInteger(itemsPerPage) ||
+    itemsPerPage < 1 ||
+    itemsPerPage > 100
+) {
+    return res.status(400).json({
+        success: false,
+        message: "Limit must be an integer between 1 and 100"
+    });
+}
+
+        // Calculate how many documents to skip
+        const skip = (currentPage - 1) * itemsPerPage;
+
+        // Get total number of matching students
+        const totalStudents = await Student.countDocuments(filter);
+
+        // Get students for current page
+        const students = await Student.find(filter)
+            .skip(skip)
+            .limit(itemsPerPage);
+
+        // Calculate total pages
+        const totalPages = Math.ceil(totalStudents / itemsPerPage);
 
         res.status(200).json({
             success: true,
             count: students.length,
+            pagination: {
+                currentPage: currentPage,
+                itemsPerPage: itemsPerPage,
+                totalStudents: totalStudents,
+                totalPages: totalPages
+            },
             students: students
         });
     } catch (error) {
