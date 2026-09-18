@@ -30,6 +30,15 @@ const createStudent = async (req, res) => {
             student: student
         });
     } catch (error) {
+        if (error.code === 11000) {
+            const duplicateField = Object.keys(error.keyPattern)[0];
+
+            return res.status(409).json({
+                success: false,
+                message: `${duplicateField} already exists`
+            });
+        }
+
         res.status(400).json({
             success: false,
             message: "Failed to create student",
