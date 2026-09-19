@@ -14,15 +14,28 @@ const startAttendanceSession = async (req, res) => {
             method
         } = req.body;
 
-        // Check teacher exists
-        const teacher = await Teacher.findById(teacherId);
+       // Find the teacher record
+const teacher = await Teacher.findById(teacherId);
 
-        if (!teacher) {
-            return res.status(404).json({
-                success: false,
-                message: "Teacher not found"
-            });
-        }
+if (!teacher) {
+    return res.status(404).json({
+        success: false,
+        message: "Teacher not found"
+    });
+}
+
+// Make sure the logged-in user actually belongs to this teacher
+if (
+    !teacher.userId ||
+    teacher.userId.toString() !== req.user.userId.toString()
+) {
+    return res.status(403).json({
+        success: false,
+        message: "You are not authorized to start attendance for this teacher"
+    });
+}
+
+
 
         // Check class exists
         const classData = await Class.findById(classId);
