@@ -9,6 +9,8 @@ const classRoutes = require("./routes/classRoutes");
 const subjectRoutes = require("./routes/subjectRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
 const teachingAssignmentRoutes = require("./routes/teachingAssignmentRoutes");
+const attendanceSessionRoutes = require("./routes/attendanceSessionRoutes");
+const attendanceRecordRoutes = require("./routes/attendanceRecordRoutes");
 
 
 const app = express();
@@ -36,9 +38,13 @@ app.use("/api/subjects", subjectRoutes);
 // Teacher routes
 app.use("/api/teachers", teacherRoutes);
 
-app.get("/", (req, res) => {
-    res.send("SmartAttend AI Backend is running!");
-});
+
+// Attendance Session routes
+app.use(
+    "/api/attendance-sessions",
+    attendanceSessionRoutes
+);
+
 
 
 // Teaching Assignment routes
@@ -46,6 +52,19 @@ app.use(
     "/api/teaching-assignments",
     teachingAssignmentRoutes
 );
+
+
+
+// Attendance Record routes
+app.use(
+    "/api/attendance-records",
+    attendanceRecordRoutes
+);
+
+app.get("/", (req, res) => {
+    res.send("SmartAttend AI Backend is running!");
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
