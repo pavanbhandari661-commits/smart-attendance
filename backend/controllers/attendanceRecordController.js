@@ -217,7 +217,8 @@ const getAttendanceReview = async (req, res) => {
                     : null,
                 recordId: record
                     ? record._id
-                    : null
+                    : null,
+                recordExists: !!record
             };
         });
 
@@ -235,6 +236,9 @@ const getAttendanceReview = async (req, res) => {
         });
     }
 };
+
+
+
 
 
 

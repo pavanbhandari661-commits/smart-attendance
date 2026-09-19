@@ -40,14 +40,6 @@ router.get(
     getAttendanceReview
 );
 
-// Update attendance during the REVIEW stage
-router.put(
-    "/:id",
-    protect,
-    authorize("admin", "teacher"),
-    updateAttendance
-);
-
 // Upsert attendance during the REVIEW stage
 
 router.put(
@@ -57,5 +49,15 @@ router.put(
     validateAttendanceRecord,
     upsertAttendance
 );
+
+// Update attendance during the REVIEW stage
+router.put(
+    "/:id",
+    protect,
+    authorize("admin", "teacher"),
+    updateAttendance
+);
+
+
 
 module.exports = router;
