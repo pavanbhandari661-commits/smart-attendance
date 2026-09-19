@@ -1,6 +1,33 @@
 const AttendanceRecord = require("../models/AttendanceRecord");
 const AttendanceSession = require("../models/AttendanceSession");
 const Student = require("../models/Student");
+const Teacher = require("../models/Teacher");
+
+
+
+// Check whether the logged-in user owns the attendance session
+const verifySessionAccess = async (session, user) => {
+    // Admins can access all attendance sessions
+    if (user.role === "admin") {
+        return true;
+    }
+
+    // Find the teacher linked to the logged-in user
+    const teacher = await Teacher.findOne({
+        userId: user.userId
+    });
+
+    if (!teacher) {
+        return false;
+    }
+
+    // Check whether this teacher owns the session
+    return (
+        session.teacherId &&
+        session.teacherId.toString() === teacher._id.toString()
+    );
+};
+
 
 // Mark attendance for one student
 const markAttendance = async (req, res) => {
@@ -24,6 +51,19 @@ const markAttendance = async (req, res) => {
                 message: "Attendance session not found"
             });
         }
+
+        // Verify that the logged-in user can access this session
+const hasAccess = await verifySessionAccess(
+    session,
+    req.user
+);
+
+if (!hasAccess) {
+    return res.status(403).json({
+        success: false,
+        message: "You are not authorized to modify this attendance session"
+    });
+}
 
         // Attendance can only be marked for an active session
        if (!["ACTIVE", "REVIEW"].includes(session.status)) {
@@ -125,6 +165,19 @@ const getAttendanceRecordsBySession = async (req, res) => {
             });
         }
 
+        // Verify that the logged-in user can access this session
+const hasAccess = await verifySessionAccess(
+    session,
+    req.user
+);
+
+if (!hasAccess) {
+    return res.status(403).json({
+        success: false,
+        message: "You are not authorized to view this attendance session"
+    });
+}
+
         const records = await AttendanceRecord.find({
             sessionId
         })
@@ -171,6 +224,19 @@ const getAttendanceReview = async (req, res) => {
                 message: "Attendance session not found"
             });
         }
+
+        // Verify that the logged-in user can access this session
+const hasAccess = await verifySessionAccess(
+    session,
+    req.user
+);
+
+if (!hasAccess) {
+    return res.status(403).json({
+        success: false,
+        message: "You are not authorized to review this attendance session"
+    });
+}
 
         // Get all students belonging to the class
         const students = await Student.find({
@@ -239,9 +305,6 @@ const getAttendanceReview = async (req, res) => {
 
 
 
-
-
-
 // Update an attendance record during the review stage
 const updateAttendance = async (req, res) => {
     try {
@@ -267,6 +330,19 @@ const updateAttendance = async (req, res) => {
                 message: "Attendance session not found"
             });
         }
+
+        // Verify that the logged-in user can access this session
+const hasAccess = await verifySessionAccess(
+    session,
+    req.user
+);
+
+if (!hasAccess) {
+    return res.status(403).json({
+        success: false,
+        message: "You are not authorized to modify this attendance session"
+    });
+}
 
         // Attendance can only be corrected during REVIEW
         if (session.status !== "REVIEW") {
@@ -334,6 +410,19 @@ const upsertAttendance = async (req, res) => {
                 message: "Attendance session not found"
             });
         }
+
+        // Verify that the logged-in user can access this session
+const hasAccess = await verifySessionAccess(
+    session,
+    req.user
+);
+
+if (!hasAccess) {
+    return res.status(403).json({
+        success: false,
+        message: "You are not authorized to modify this attendance session"
+    });
+}
 
         // Attendance corrections are allowed only during review
         if (session.status !== "REVIEW") {
