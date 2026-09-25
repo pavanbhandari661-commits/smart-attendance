@@ -4,6 +4,32 @@ const Teacher = require("../models/Teacher");
 const Class = require("../models/Class");
 const Subject = require("../models/Subject");
 
+// Check whether the logged-in user owns the attendance session
+const verifySessionAccess = async (session, user) => {
+    // Admins can access all attendance sessions
+    if (user.role === "admin") {
+        return true;
+    }
+
+    // Find the teacher linked to the logged-in user
+    const teacher = await Teacher.findOne({
+        userId: user.userId
+    });
+
+    if (!teacher) {
+        return false;
+    }
+
+    // Handle both populated and unpopulated teacherId
+    const sessionTeacherId = session.teacherId?._id
+        ? session.teacherId._id.toString()
+        : session.teacherId?.toString();
+
+    // Check whether this teacher owns the session
+    return sessionTeacherId === teacher._id.toString();
+};
+
+
 // Start attendance session
 const startAttendanceSession = async (req, res) => {
     try {
@@ -14,28 +40,26 @@ const startAttendanceSession = async (req, res) => {
             method
         } = req.body;
 
-       // Find the teacher record
-const teacher = await Teacher.findById(teacherId);
+        // Find the teacher record
+        const teacher = await Teacher.findById(teacherId);
 
-if (!teacher) {
-    return res.status(404).json({
-        success: false,
-        message: "Teacher not found"
-    });
-}
+        if (!teacher) {
+            return res.status(404).json({
+                success: false,
+                message: "Teacher not found"
+            });
+        }
 
-// Make sure the logged-in user actually belongs to this teacher
-if (
-    !teacher.userId ||
-    teacher.userId.toString() !== req.user.userId.toString()
-) {
-    return res.status(403).json({
-        success: false,
-        message: "You are not authorized to start attendance for this teacher"
-    });
-}
-
-
+        // Make sure the logged-in user actually belongs to this teacher
+        if (
+            !teacher.userId ||
+            teacher.userId.toString() !== req.user.userId.toString()
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to start attendance for this teacher"
+            });
+        }
 
         // Check class exists
         const classData = await Class.findById(classId);
@@ -123,7 +147,25 @@ if (
 // Get all attendance sessions
 const getAttendanceSessions = async (req, res) => {
     try {
-        const sessions = await AttendanceSession.find()
+        let query = {};
+
+        // Teachers can only see their own attendance sessions
+        if (req.user.role !== "admin") {
+            const teacher = await Teacher.findOne({
+                userId: req.user.userId
+            });
+
+            if (!teacher) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Teacher account is not linked"
+                });
+            }
+
+            query.teacherId = teacher._id;
+        }
+
+        const sessions = await AttendanceSession.find(query)
             .populate(
                 "teacherId",
                 "teacherId name department designation"
@@ -181,6 +223,19 @@ const getAttendanceSessionById = async (req, res) => {
             });
         }
 
+        // Verify that the logged-in user can access this session
+        const hasAccess = await verifySessionAccess(
+            session,
+            req.user
+        );
+
+        if (!hasAccess) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to view this attendance session"
+            });
+        }
+
         res.status(200).json({
             success: true,
             session
@@ -209,6 +264,19 @@ const endAttendanceSession = async (req, res) => {
             });
         }
 
+        // Verify that the logged-in user can access this session
+        const hasAccess = await verifySessionAccess(
+            session,
+            req.user
+        );
+
+        if (!hasAccess) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to end this attendance session"
+            });
+        }
+
         if (session.status !== "ACTIVE") {
             return res.status(400).json({
                 success: false,
@@ -217,7 +285,7 @@ const endAttendanceSession = async (req, res) => {
         }
 
         session.endTime = new Date();
-       session.status = "REVIEW";
+        session.status = "REVIEW";
 
         await session.save();
 
@@ -235,6 +303,7 @@ const endAttendanceSession = async (req, res) => {
     }
 };
 
+
 // Confirm reviewed attendance and mark the session as COMPLETED
 const confirmAttendanceSession = async (req, res) => {
     try {
@@ -249,6 +318,19 @@ const confirmAttendanceSession = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Attendance session not found"
+            });
+        }
+
+        // Verify that the logged-in user can access this session
+        const hasAccess = await verifySessionAccess(
+            session,
+            req.user
+        );
+
+        if (!hasAccess) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to confirm this attendance session"
             });
         }
 
