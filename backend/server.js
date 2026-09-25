@@ -1,6 +1,9 @@
+
 require("dotenv").config();
 
 const express = require("express");
+const cors = require("cors");
+
 const connectDB = require("./config/db");
 
 const studentRoutes = require("./routes/studentRoutes");
@@ -12,13 +15,15 @@ const teachingAssignmentRoutes = require("./routes/teachingAssignmentRoutes");
 const attendanceSessionRoutes = require("./routes/attendanceSessionRoutes");
 const attendanceRecordRoutes = require("./routes/attendanceRecordRoutes");
 
-
 const app = express();
 
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
 connectDB();
+
+// Allow frontend to communicate with backend
+app.use(cors());
 
 // Middleware to read JSON data
 app.use(express.json());
@@ -38,22 +43,17 @@ app.use("/api/subjects", subjectRoutes);
 // Teacher routes
 app.use("/api/teachers", teacherRoutes);
 
-
 // Attendance Session routes
 app.use(
     "/api/attendance-sessions",
     attendanceSessionRoutes
 );
 
-
-
 // Teaching Assignment routes
 app.use(
     "/api/teaching-assignments",
     teachingAssignmentRoutes
 );
-
-
 
 // Attendance Record routes
 app.use(
@@ -65,7 +65,7 @@ app.get("/", (req, res) => {
     res.send("SmartAttend AI Backend is running!");
 });
 
-
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+
