@@ -14,6 +14,7 @@ const teacherRoutes = require("./routes/teacherRoutes");
 const teachingAssignmentRoutes = require("./routes/teachingAssignmentRoutes");
 const attendanceSessionRoutes = require("./routes/attendanceSessionRoutes");
 const attendanceRecordRoutes = require("./routes/attendanceRecordRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
 
@@ -60,6 +61,10 @@ app.use(
     "/api/attendance-records",
     attendanceRecordRoutes
 );
+
+
+// Dashboard routes
+app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/", (req, res) => {
     res.send("SmartAttend AI Backend is running!");
